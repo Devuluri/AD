@@ -21,9 +21,10 @@ CORE CONVERSATIONAL BEHAVIORS:
    - Use clean bullet points for multiple questions or tips.
    - Mention temperature equivalents when helpful (e.g., "102°F (38.9°C)").
    - Keep answers readable, avoid overwhelming walls of text.
-5. Multilingual Readiness:
-   - Primarily respond in English.
-   - If the user addresses you in Hindi or Telugu, respond naturally in their language while keeping the same medical safety rigor.
+5. Multilingual Fluidity:
+   - If language requested is Hindi (hi), respond in warm, natural Hindi (देवनागरी).
+   - If language requested is Telugu (te), respond in warm, natural Telugu (తెలుగు).
+   - Otherwise respond in warm, conversational English.
 
 CRITICAL HEALTH SAFETY & EMERGENCY PROTOCOL:
 - If symptoms indicate an EMERGENCY (severe chest pain radiating to arm/jaw, severe difficulty breathing, sudden weakness or numbness on one side of face/body, coughing blood, seizure, persistent confusion, severe allergic anaphylaxis, or infant fever > 100.4°F):
@@ -34,12 +35,18 @@ CRITICAL HEALTH SAFETY & EMERGENCY PROTOCOL:
 
 /**
  * Intelligent Rule-Based Clinical Engine used when GEMINI_API_KEY is not supplied or fails.
- * Guarantees a fully functional, medically accurate demo matching the reference specification.
  */
 export function generateFallbackMedicalResponse(
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
+  language?: string
 ): string {
   if (!messages || messages.length === 0) {
+    if (language === "hi") {
+      return "नमस्ते! मैं वैद्य सहाय हूँ 👋\nमैं आपके स्वास्थ्य संबंधी प्रश्नों में सहायता करने और आपको बेहतर स्वास्थ्य की दिशा में मार्गदर्शन देने के लिए यहाँ हूँ।";
+    }
+    if (language === "te") {
+      return "నమస్కారం! నేను వైద్య సహాయ్ 👋\nమీ ఆరోగ్య సంబంధిత ప్రశ్నలకు సమాధానాలు ఇవ్వడానికి మరియు సరైన మార్గదర్శకత్వం అందించడానికి నేను ఇక్కడ ఉన్నాను.";
+    }
     return "Hello! I'm Vaidya Sahay 👋\nI'm here to help you with your health-related questions and guide you to better health.";
   }
 
@@ -59,6 +66,16 @@ export function generateFallbackMedicalResponse(
     fullText.includes("coughing blood") ||
     fullText.includes("unconscious")
   ) {
+    if (language === "hi") {
+      return (
+        "🚨 **आपातकालीन चिकित्सा चेतावनी (Emergency Alert)**\n\n" +
+        "आपके द्वारा बताए गए लक्षण किसी गंभीर चिकित्सीय आपातकाल का संकेत हो सकते हैं।\n\n" +
+        "कृपया तुरंत कार्रवाई करें:\n" +
+        "• **तत्काल आपातकालीन सेवा पर कॉल करें (112 या 108 डायल करें)**।\n" +
+        "• खुद वाहन न चलाएं, तुरंत नजदीकी अस्पताल के इमरजेंसी विभाग में पहुँचें।\n" +
+        "• आरामदायक और सीधी स्थिति में बैठें।"
+      );
+    }
     return (
       "🚨 **URGENT MEDICAL ALERT**\n\n" +
       "The symptoms you described can indicate a serious medical emergency.\n\n" +
@@ -82,6 +99,17 @@ export function generateFallbackMedicalResponse(
     const celsius = tempVal > 60 ? ((tempVal - 32) * 5 / 9).toFixed(1) : tempVal.toFixed(1);
     const fahr = tempVal > 60 ? tempVal : (tempVal * 9 / 5 + 32).toFixed(1);
 
+    if (language === "hi") {
+      return (
+        `${fahr}°F (${celsius}°C) का तापमान एक महत्वपूर्ण बुखार माना जाता है।\n\n` +
+        "स्थिति को बेहतर समझने के लिए कुछ प्रश्न:\n" +
+        "• क्या आपको खांसी, गले में खराश, या शरीर में गंभीर दर्द है?\n" +
+        "• क्या आपको कंपकंपी (चिल्स) आ रही है या बहुत कमजोरी महसूस हो रही है?\n" +
+        "• क्या आप पर्याप्त मात्रा में तरल पदार्थ पी पा रहे हैं?\n\n" +
+        "**देखभाल सुझाव:** खूब पानी पिएं, आराम करें और यदि बुखार 103°F से अधिक हो या सांस लेने में तकलीफ हो, तो तुरंत डॉक्टर से मिलें।"
+      );
+    }
+
     return (
       `A temperature of ${fahr}°F (${celsius}°C) is considered a significant fever. Your symptoms provide important information for assessment.\n\n` +
       "A few more questions to understand your situation better:\n" +
@@ -97,8 +125,17 @@ export function generateFallbackMedicalResponse(
     );
   }
 
-  // Initial Fever inquiry (matches reference image conversation)
-  if (fullText.includes("fever") || fullText.includes("temperature") || fullText.includes("chills")) {
+  // Initial Fever inquiry
+  if (fullText.includes("fever") || fullText.includes("temperature") || fullText.includes("chills") || fullText.includes("बुखार") || fullText.includes("జ్వరం")) {
+    if (language === "hi") {
+      return (
+        "मुझे यह सुनकर दुख हुआ कि आप अस्वस्थ महसूस कर रहे हैं। 🙁\n" +
+        "आपकी स्थिति को बेहतर ढंग से समझने के लिए, क्या आप मुझे बता सकते हैं:\n\n" +
+        "• आपको बुखार कितने समय से है?\n" +
+        "• आपका वर्तमान तापमान कितना है (यदि मापा गया हो)?\n" +
+        "• क्या आपको खांसी, सिरदर्द, बदन दर्द या उल्टी जैसे अन्य लक्षण भी हैं?"
+      );
+    }
     return (
       "I'm sorry to hear that you're not feeling well. 🙁\n" +
       "To understand your condition better, can you please tell me:\n\n" +
@@ -109,7 +146,7 @@ export function generateFallbackMedicalResponse(
   }
 
   // Headache inquiry
-  if (fullText.includes("headache") || fullText.includes("head ache") || fullText.includes("migraine")) {
+  if (fullText.includes("headache") || fullText.includes("head ache") || fullText.includes("migraine") || fullText.includes("सिरदर्द") || fullText.includes("తలనొప్పి")) {
     return (
       "I'm sorry you are experiencing a headache. To help evaluate it better, could you share:\n\n" +
       "• Where is the pain located (forehead, temples, one side, or back of head)?\n" +
@@ -121,7 +158,7 @@ export function generateFallbackMedicalResponse(
   }
 
   // Cough inquiry
-  if (fullText.includes("cough") || fullText.includes("cold") || fullText.includes("congestion") || fullText.includes("sneezing")) {
+  if (fullText.includes("cough") || fullText.includes("cold") || fullText.includes("congestion") || fullText.includes("खांसी") || fullText.includes("దగ్గు")) {
     return (
       "Coughs can be caused by viral infections, allergies, or respiratory irritation. To guide you properly:\n\n" +
       "• Is it a dry cough or a productive cough with phlegm/mucus?\n" +
@@ -129,13 +166,13 @@ export function generateFallbackMedicalResponse(
       "• Do you have fever, shortness of breath, or chest tightness?\n\n" +
       "**Home Comfort Tips:**\n" +
       "• Warm salt-water gargles can soothe an irritated throat.\n" +
-      "• Honey with warm water or herbal tea helps soothe the cough reflex (for adults and children over 1 year).\n" +
+      "• Honey with warm water or herbal tea helps soothe the cough reflex.\n" +
       "• Keep yourself well hydrated to thin mucus secretions."
     );
   }
 
   // Medicine Information
-  if (fullText.includes("medicine") || fullText.includes("tablet") || fullText.includes("dose") || fullText.includes("paracetamol") || fullText.includes("ibuprofen") || fullText.includes("antibiotic")) {
+  if (fullText.includes("medicine") || fullText.includes("tablet") || fullText.includes("dose") || fullText.includes("paracetamol") || fullText.includes("ibuprofen") || fullText.includes("दवा")) {
     return (
       "💊 **Medicine Guidance & Information:**\n\n" +
       "• **Over-the-Counter (OTC) Antipyretics:** Paracetamol (Acetaminophen) is commonly used for fever and mild pain relief under manufacturer instructions.\n" +
@@ -145,28 +182,7 @@ export function generateFallbackMedicalResponse(
     );
   }
 
-  // Find Hospital inquiry
-  if (fullText.includes("hospital") || fullText.includes("clinic") || fullText.includes("doctor near") || fullText.includes("emergency")) {
-    return (
-      "🏥 **Healthcare & Hospital Finder:**\n\n" +
-      "If you need immediate in-person medical attention:\n" +
-      "• Click the **'Find Hospitals Near You'** button on the right sidebar to view verified medical centers and contact numbers.\n" +
-      "• **National Emergency Helpline:** 112\n" +
-      "• **Ambulance Services:** 108 / 102\n" +
-      "• If you have severe symptoms, please proceed directly to the nearest hospital emergency department."
-    );
-  }
-
-  // General greeting
-  if (fullText.includes("hi") || fullText.includes("hello") || fullText.includes("hey") || fullText.includes("namaste") || fullText === "") {
-    return (
-      "Hello! I'm Vaidya Sahay 👋\n" +
-      "I'm here to help you with your health-related questions, symptom assessment, and guide you to better health.\n\n" +
-      "How are you feeling today? You can describe any symptoms or pick from the suggested questions on the right."
-    );
-  }
-
-  // Default empathetic clinical follow-up
+  // Default response
   return (
     `Thank you for sharing that with me. I understand you are inquiring about "${latestUserMsg?.content || "your health"}".\n\n` +
     "To help me understand your condition better:\n" +
@@ -181,14 +197,14 @@ export function generateFallbackMedicalResponse(
  * Calls the official Google Gemini API using the provided conversation history.
  */
 export async function getGeminiChatResponse(
-  messages: Array<{ role: string; content: string }>
+  messages: Array<{ role: string; content: string }>,
+  language?: string
 ): Promise<{ text: string; modelUsed: string }> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-  // If no API key is provided, use the intelligent clinical fallback engine
   if (!apiKey || apiKey === "your_gemini_api_key_here") {
     return {
-      text: generateFallbackMedicalResponse(messages),
+      text: generateFallbackMedicalResponse(messages, language),
       modelUsed: "Vaidya Sahay Clinical Engine (Fallback Mode)",
     };
   }
@@ -196,10 +212,16 @@ export async function getGeminiChatResponse(
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Try gemini-1.5-flash as the primary fast conversational model
+    const langInstruction =
+      language === "hi"
+        ? "\n\nCRITICAL LANGUAGE DIRECTIVE: The user has selected HINDI. Please generate your entire response in clear, empathetic Hindi (Devanagari script), keeping technical medical terms clear."
+        : language === "te"
+        ? "\n\nCRITICAL LANGUAGE DIRECTIVE: The user has selected TELUGU. Please generate your entire response in natural, empathetic Telugu script."
+        : "";
+
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
-      systemInstruction: HEALTH_SYSTEM_INSTRUCTION,
+      systemInstruction: HEALTH_SYSTEM_INSTRUCTION + langInstruction,
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -207,8 +229,6 @@ export async function getGeminiChatResponse(
       },
     });
 
-    // Format messages for Gemini Chat
-    // Format: Gemini expects contents: [{ role: 'user'|'model', parts: [{ text: '...' }] }]
     const formattedHistory = messages.slice(0, -1).map((msg) => ({
       role: msg.role === "assistant" ? "model" : "user",
       parts: [{ text: msg.content }],
@@ -231,9 +251,8 @@ export async function getGeminiChatResponse(
     };
   } catch (error: unknown) {
     console.error("Gemini API invocation error, using clinical fallback:", error);
-    // Graceful fallback to guarantee zero downtime and smooth user experience
     return {
-      text: generateFallbackMedicalResponse(messages),
+      text: generateFallbackMedicalResponse(messages, language),
       modelUsed: "Vaidya Sahay Clinical Engine (Auto-Recovery)",
     };
   }

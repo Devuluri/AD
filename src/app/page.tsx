@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { LeftSidebar } from "@/components/LeftSidebar";
 import { MainChat } from "@/components/MainChat";
 import { RightSidebar } from "@/components/RightSidebar";
@@ -9,7 +9,8 @@ import { ChatHistoryModal } from "@/components/ChatHistoryModal";
 import { HealthToolsModal } from "@/components/HealthToolsModal";
 import { AboutModal } from "@/components/AboutModal";
 import { SavedModal } from "@/components/SavedModal";
-import { ChatMessage } from "@/lib/types";
+import { DoctorSummaryModal } from "@/components/DoctorSummaryModal";
+import { ChatMessage, SupportedLanguage } from "@/lib/types";
 
 // Initial demo messages matching reference image perfectly
 const INITIAL_DEMO_MESSAGES: ChatMessage[] = [
@@ -52,6 +53,7 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_DEMO_MESSAGES);
   const [isLoading, setIsLoading] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>("en");
 
   // Tab & Modal State
   const [activeTab, setActiveTab] = useState<"home" | "history" | "saved" | "tools" | "about">("home");
@@ -60,6 +62,7 @@ export default function Home() {
   const [isToolsModalOpen, setIsToolsModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
+  const [isDoctorSummaryOpen, setIsDoctorSummaryOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Handle Left Sidebar tab switches
@@ -73,11 +76,17 @@ export default function Home() {
 
   // Start a fresh consultation session
   const handleNewChat = () => {
+    const greetingText =
+      selectedLanguage === "hi"
+        ? "नमस्ते! मैं वैद्य सहाय हूँ 👋\nमैं आपके स्वास्थ्य सम्बन्धी प्रश्नों और लक्षणों का आकलन करने में आपकी सहायता के लिए यहाँ हूँ।\n\nआज आप कैसा महसूस कर रहे हैं?"
+        : selectedLanguage === "te"
+        ? "నమస్కారం! నేను వైద్య సహాయ్ 👋\nమీ ఆరోగ్య సంబంధిత ప్రశ్నలకు సమాధానాలు ఇవ్వడానికి నేను సిద్ధంగా ఉన్నాను.\n\nఈరోజు మీరు ఎలా భావిస్తున్నారు?"
+        : "Hello! I'm Vaidya Sahay 👋\nI'm here to help you with your health-related questions, symptom assessment, and guide you to better health.\n\nHow can I help you today?";
+
     const greeting: ChatMessage = {
       id: "fresh-" + Date.now(),
       role: "assistant",
-      content:
-        "Hello! I'm Vaidya Sahay 👋\nI'm here to help you with your health-related questions, symptom assessment, and guide you to better health.\n\nHow can I help you today?",
+      content: greetingText,
       createdAt: new Date().toISOString(),
     };
     setMessages([greeting]);
@@ -105,7 +114,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // Send conversation payload to server-side API
+      // Send conversation payload to server-side API with language hint
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,6 +124,7 @@ export default function Home() {
             content: m.content,
           })),
           conversationId: activeConversationId || undefined,
+          language: selectedLanguage,
         }),
       });
 
@@ -213,6 +223,11 @@ export default function Home() {
               onClearChat={handleClearChat}
               onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
               onToggleSaveMessage={handleToggleSave}
+              onOpenDoctorSummary={() => setIsDoctorSummaryOpen(true)}
+              selectedLanguage={selectedLanguage}
+              onChangeLanguage={(lang) => {
+                setSelectedLanguage(lang);
+              }}
             />
           </main>
 
@@ -254,6 +269,12 @@ export default function Home() {
           setIsToolsModalOpen(false);
           setActiveTab("home");
         }}
+      />
+
+      <DoctorSummaryModal
+        isOpen={isDoctorSummaryOpen}
+        onClose={() => setIsDoctorSummaryOpen(false)}
+        messages={messages}
       />
 
       <AboutModal

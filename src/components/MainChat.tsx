@@ -8,8 +8,10 @@ import {
   MicOff,
   Send,
   Menu,
+  FileText,
+  Languages,
 } from "lucide-react";
-import { ChatMessage } from "@/lib/types";
+import { ChatMessage, SupportedLanguage } from "@/lib/types";
 import { MessageBubble } from "./MessageBubble";
 import { AIRobotAvatar } from "./Icons";
 
@@ -59,6 +61,9 @@ interface MainChatProps {
   onClearChat: () => void;
   onOpenMobileMenu?: () => void;
   onToggleSaveMessage?: (id: string) => void;
+  onOpenDoctorSummary?: () => void;
+  selectedLanguage: SupportedLanguage;
+  onChangeLanguage: (lang: SupportedLanguage) => void;
 }
 
 export const MainChat: React.FC<MainChatProps> = ({
@@ -68,6 +73,9 @@ export const MainChat: React.FC<MainChatProps> = ({
   onClearChat,
   onOpenMobileMenu,
   onToggleSaveMessage,
+  onOpenDoctorSummary,
+  selectedLanguage,
+  onChangeLanguage,
 }) => {
   const [inputText, setInputText] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -79,6 +87,41 @@ export const MainChat: React.FC<MainChatProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  // Compute live triage severity level from messages
+  const triageAssessment = (() => {
+    const fullConversation = messages.map((m) => m.content.toLowerCase()).join(" ");
+    if (
+      fullConversation.includes("chest pain") ||
+      fullConversation.includes("breathing") ||
+      fullConversation.includes("stroke") ||
+      fullConversation.includes("unconscious")
+    ) {
+      return {
+        label: "Emergency Risk",
+        badge: "bg-red-50 text-red-700 border-red-200",
+        dot: "bg-red-500",
+      };
+    }
+    if (
+      fullConversation.includes("102") ||
+      fullConversation.includes("fever") ||
+      fullConversation.includes("headache") ||
+      fullConversation.includes("yesterday") ||
+      fullConversation.includes("cough")
+    ) {
+      return {
+        label: "Moderate (Physician Advised)",
+        badge: "bg-amber-50 text-amber-800 border-amber-200",
+        dot: "bg-amber-500",
+      };
+    }
+    return {
+      label: "Mild (Self-Care)",
+      badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      dot: "bg-emerald-500",
+    };
+  })();
 
   // Handle Form Submission
   const handleSubmit = (e?: React.FormEvent) => {
@@ -116,7 +159,12 @@ export const MainChat: React.FC<MainChatProps> = ({
       const recognition = new SpeechRecognitionClass();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = "en-US";
+      recognition.lang =
+        selectedLanguage === "hi"
+          ? "hi-IN"
+          : selectedLanguage === "te"
+          ? "te-IN"
+          : "en-US";
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
@@ -144,7 +192,7 @@ export const MainChat: React.FC<MainChatProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-white lg:rounded-2xl border border-gray-100/90 shadow-xs overflow-hidden">
       {/* Top Header Bar */}
-      <header className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white z-10">
+      <header className="px-5 py-3.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white z-10">
         <div className="flex items-center gap-3">
           {onOpenMobileMenu && (
             <button
@@ -161,21 +209,77 @@ export const MainChat: React.FC<MainChatProps> = ({
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-gray-800 leading-tight">
-              AI Healthcare Assistant
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-gray-800 leading-tight">
+                AI Healthcare Assistant
+              </h2>
+              {/* Live Triage Risk Indicator */}
+              <span
+                className={`hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold ${triageAssessment.badge}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${triageAssessment.dot}`}></span>
+                <span>{triageAssessment.label}</span>
+              </span>
+            </div>
             <p className="text-[10px] text-gray-400">
-              Vaidya Sahay Clinical Assessment Engine
+              Vaidya Sahay Clinical Assessment Engine • MASQUERADE &apos;26
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Vernacular Language Selector */}
+          <div className="flex items-center bg-gray-50 border border-gray-200/80 rounded-xl p-0.5 text-xs">
+            <Languages className="w-3.5 h-3.5 text-gray-400 ml-1.5 mr-1" />
+            <button
+              onClick={() => onChangeLanguage("en")}
+              className={`px-2 py-1 rounded-lg font-medium transition-all ${
+                selectedLanguage === "en"
+                  ? "bg-white text-emerald-800 shadow-xs font-bold"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => onChangeLanguage("hi")}
+              className={`px-2 py-1 rounded-lg font-medium transition-all ${
+                selectedLanguage === "hi"
+                  ? "bg-white text-emerald-800 shadow-xs font-bold"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              हिंदी
+            </button>
+            <button
+              onClick={() => onChangeLanguage("te")}
+              className={`px-2 py-1 rounded-lg font-medium transition-all ${
+                selectedLanguage === "te"
+                  ? "bg-white text-emerald-800 shadow-xs font-bold"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              తెలుగు
+            </button>
+          </div>
+
           {/* Online Status Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/50 text-[11px] font-semibold text-emerald-700">
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/50 text-[11px] font-semibold text-emerald-700">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Online</span>
           </div>
+
+          {/* Doctor Summary Button (Competitive Novel Feature) */}
+          {onOpenDoctorSummary && (
+            <button
+              onClick={onOpenDoctorSummary}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-xs active:scale-95"
+              title="Generate pre-consultation summary for doctor (SBAR format)"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="hidden md:inline">Doctor Summary</span>
+            </button>
+          )}
 
           {/* Clear Chat Button */}
           <button
@@ -242,7 +346,13 @@ export const MainChat: React.FC<MainChatProps> = ({
                 handleSubmit();
               }
             }}
-            placeholder="Type your message..."
+            placeholder={
+              selectedLanguage === "hi"
+                ? "अपने लक्षण या स्वास्थ्य प्रश्न यहाँ लिखें..."
+                : selectedLanguage === "te"
+                ? "మీ లక్షణాలు లేదా ఆరోగ్య ప్రశ్నను ఇక్కడ టైప్ చేయండి..."
+                : "Type your message..."
+            }
             disabled={isLoading}
             className="flex-1 bg-transparent px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
           />

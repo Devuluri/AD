@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages, conversationId } = body;
+    const { messages, conversationId, language } = body;
 
     // Input validation
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -29,19 +29,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Call Gemini API (with seamless medical fallback)
-    const { text: responseText, modelUsed } = await getGeminiChatResponse(messages);
+    const { text: responseText, modelUsed } = await getGeminiChatResponse(messages, language);
 
     // Save to Prisma SQLite database if conversationId is provided or if saving is enabled
     let activeConvId = conversationId;
     try {
       if (activeConvId) {
-        // Ensure conversation exists or create it
         let conversation = await prisma.conversation.findUnique({
           where: { id: activeConvId },
         });
 
         if (!conversation) {
-          // Generate an intelligent title from first user query
           const titleSnippet =
             latestMessage.content.length > 35
               ? latestMessage.content.substring(0, 35) + "..."
@@ -55,7 +53,6 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Save the user message and assistant response
         await prisma.message.createMany({
           data: [
             {
@@ -71,7 +68,6 @@ export async function POST(req: NextRequest) {
           ],
         });
       } else {
-        // Create a new conversation and persist
         const titleSnippet =
           latestMessage.content.length > 35
             ? latestMessage.content.substring(0, 35) + "..."
@@ -97,7 +93,6 @@ export async function POST(req: NextRequest) {
         activeConvId = newConv.id;
       }
     } catch (dbError) {
-      // Don't let database write error prevent returning the AI response
       console.error("Database persistence warning:", dbError);
     }
 
