@@ -1,0 +1,67 @@
+import { HospitalInfo } from "@/lib/types";
+
+export const MOCK_HOSPITALS: HospitalInfo[] = [
+  {
+    id: "hosp-1",
+    name: "Apollo Multispecialty Hospital",
+    type: "Super Specialty",
+    distance: "1.8 km",
+    phone: "+91 40 2360 7777",
+    emergencyPhone: "1066",
+    rating: 4.8,
+    open247: true,
+    address: "Road No. 72, Opposite Bharatiya Vidya Bhavan, Jubilee Hills",
+  },
+  {
+    id: "hosp-2",
+    name: "KIMS Hospitals (Krishna Institute of Medical Sciences)",
+    type: "Super Specialty",
+    distance: "3.2 km",
+    phone: "+91 40 4488 5000",
+    emergencyPhone: "108",
+    rating: 4.7,
+    open247: true,
+    address: "1-8-31/1, Minister Road, Krishna Nagar Colony, Begumpet",
+  },
+  {
+    id: "hosp-3",
+    name: "Yashoda Hospitals & Trauma Center",
+    type: "Emergency",
+    distance: "4.1 km",
+    phone: "+91 40 4567 4567",
+    emergencyPhone: "+91 40 2455 5555",
+    rating: 4.6,
+    open247: true,
+    address: "Raj Bhavan Road, Somajiguda",
+  },
+  {
+    id: "hosp-4",
+    name: "Rainbow Children's Hospital & Perinatal Centre",
+    type: "Pediatric",
+    distance: "5.0 km",
+    phone: "+91 40 4466 5555",
+    emergencyPhone: "1800 2122",
+    rating: 4.9,
+    open247: true,
+    address: "Road No. 2, Banjara Hills",
+  },
+  {
+    id: "hosp-5",
+    name: "Care Hospitals & Emergency Care Unit",
+    type: "General",
+    distance: "5.7 km",
+    phone: "+91 40 6165 6565",
+    emergencyPhone: "105711",
+    rating: 4.5,
+    open247: true,
+    address: "Opp. Cyber Towers, Hitec City",
+  },
+];
+
+export const EMERGENCY_HOTLINES = [
+  { name: "National Emergency Number", number: "112", description: "All-in-one emergency helpline (Police, Fire, Medical)" },
+  { name: "Medical Ambulance Helpline", number: "108", description: "Free emergency response medical transport service" },
+  { name: "Government Hospital Helpline", number: "102", description: "Maternal and child emergency transport helpline" },
+  { name: "National Poison Information Centre", number: "1800 116 117", description: "24/7 toxicology and acute poisoning helpline" },
+  { name: "Mental Health Support (Tele-MANAS)", number: "14416", description: "Free government 24x7 psychological distress helpline" },
+];
