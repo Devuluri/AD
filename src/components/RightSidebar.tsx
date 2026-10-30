@@ -1,17 +1,21 @@
 "use client";
 
 import React from "react";
-import { Lightbulb, Info, PhoneCall, ChevronRight } from "lucide-react";
+import { Lightbulb, Info, PhoneCall, ChevronRight, History, Sparkles, FileText } from "lucide-react";
 
 interface RightSidebarProps {
   onSelectQuestion: (question: string) => void;
   onOpenHospitalModal: () => void;
+  onOpenAskHistory?: () => void;
+  onOpenReports?: () => void;
   className?: string;
 }
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({
   onSelectQuestion,
   onOpenHospitalModal,
+  onOpenAskHistory,
+  onOpenReports,
   className = "",
 }) => {
   const suggestedQuestions = [
@@ -23,7 +27,34 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   ];
 
   return (
-    <aside className={`w-80 flex flex-col space-y-4 p-5 overflow-y-auto ${className}`}>
+    <aside className={`w-80 flex flex-col space-y-3.5 p-5 overflow-y-auto ${className}`}>
+      {/* Ask Past Health Conversations Card (Novel Feature) */}
+      {onOpenAskHistory && (
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white rounded-2xl p-3.5 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Memory Intelligence
+            </span>
+            <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold leading-tight">
+              Ask Your Past Health Records
+            </h3>
+            <p className="text-[11px] text-emerald-100/90 mt-0.5">
+              &ldquo;What did I report about my fever?&rdquo;
+            </p>
+          </div>
+          <button
+            onClick={onOpenAskHistory}
+            className="w-full bg-white hover:bg-emerald-50 text-emerald-800 text-xs font-bold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs"
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Search Past Consultations</span>
+          </button>
+        </div>
+      )}
+
       {/* Suggested Questions Card */}
       <div className="bg-white border border-gray-100/90 rounded-2xl p-4 shadow-xs">
         <div className="flex items-center gap-2 mb-3">

@@ -7,12 +7,32 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model Profile {
+  id             String           @id @default(uuid())
+  name           String
+  relationship   String           @default("Self") // "Self", "Father", "Mother", "Child", "Spouse"
+  age            Int?
+  gender         String?          // "Male", "Female", "Other"
+  bloodGroup     String?
+  allergies      String?
+  chronicConditions String?
+  consentGranted Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  conversations  Conversation[]
+  vitalRecords   VitalRecord[]
+  medicalReports MedicalReport[]
+  timelineEvents TimelineEvent[]
+}
+
 model Conversation {
   id        String    @id @default(uuid())
+  profileId String?
   title     String    @default("New Health Consultation")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   isSaved   Boolean   @default(false)
+  profile   Profile?  @relation(fields: [profileId], references: [id], onDelete: SetNull)
   messages  Message[]
 }
 
@@ -23,4 +43,56 @@ model Message {
   content        String
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model VitalRecord {
+  id        String   @id @default(uuid())
+  profileId String?
+  type      String   // "blood_pressure", "heart_rate", "glucose", "spo2", "temperature", "weight"
+  value     String   // e.g. "120/80", "72", "110", "98", "98.6"
+  unit      String   // "mmHg", "bpm", "mg/dL", "%", "°F", "kg"
+  status    String   // "normal", "warning", "critical"
+  notes     String?
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  profile    Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model MedicalReport {
+  id          String           @id @default(uuid())
+  profileId   String?
+  title       String
+  testType    String           // "CBC", "Lipid Profile", "Thyroid", "Diabetes / HbA1c", "General"
+  testDate    DateTime         @default(now())
+  summary     String
+  findings    String?
+  recommendations String?
+  rawContent  String?
+  createdAt   DateTime         @default(now())
+  profile     Profile?         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  biomarkers  BiomarkerValue[]
+}
+
+model BiomarkerValue {
+  id             String        @id @default(uuid())
+  reportId       String
+  name           String        // e.g. "WBC", "Total Cholesterol", "HbA1c"
+  value          String        // e.g. "13,200", "225", "6.2"
+  unit           String        // e.g. "/mcL", "mg/dL", "%"
+  referenceRange String        // e.g. "4,500 - 11,000"
+  status         String        // "normal", "borderline", "abnormal", "critical"
+  interpretation String?
+  report         MedicalReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model TimelineEvent {
+  id          String   @id @default(uuid())
+  profileId   String?
+  title       String
+  category    String   // "symptom", "medication", "vital", "report", "consultation"
+  eventDate   DateTime @default(now())
+  description String
+  severity    String?  // "mild", "moderate", "severe"
+  createdAt   DateTime @default(now())
+  profile     Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }

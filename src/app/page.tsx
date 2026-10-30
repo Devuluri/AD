@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { LeftSidebar } from "@/components/LeftSidebar";
+import React, { useState, useEffect } from "react";
+import { LeftSidebar, NavTabType } from "@/components/LeftSidebar";
 import { MainChat } from "@/components/MainChat";
 import { RightSidebar } from "@/components/RightSidebar";
 import { HospitalModal } from "@/components/HospitalModal";
@@ -10,7 +10,12 @@ import { HealthToolsModal } from "@/components/HealthToolsModal";
 import { AboutModal } from "@/components/AboutModal";
 import { SavedModal } from "@/components/SavedModal";
 import { DoctorSummaryModal } from "@/components/DoctorSummaryModal";
-import { ChatMessage, SupportedLanguage } from "@/lib/types";
+import { AskHistoryModal } from "@/components/AskHistoryModal";
+import { HealthDashboardView } from "@/components/HealthDashboardView";
+import { MedicalReportView } from "@/components/MedicalReportView";
+import { MedicineIntelligenceView } from "@/components/MedicineIntelligenceView";
+import { HealthTimelineView } from "@/components/HealthTimelineView";
+import { ChatMessage, SupportedLanguage, FamilyProfile } from "@/lib/types";
 
 // Initial demo messages matching reference image perfectly
 const INITIAL_DEMO_MESSAGES: ChatMessage[] = [
@@ -55,23 +60,62 @@ export default function Home() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>("en");
 
-  // Tab & Modal State
-  const [activeTab, setActiveTab] = useState<"home" | "history" | "saved" | "tools" | "about">("home");
+  // Multi-Profile State
+  const [profiles, setProfiles] = useState<FamilyProfile[]>([]);
+  const [activeProfile, setActiveProfile] = useState<FamilyProfile | null>(null);
+
+  // Tab & View Navigation State
+  const [activeTab, setActiveTab] = useState<NavTabType>("home");
+
+  // Modals State
   const [isHospitalModalOpen, setIsHospitalModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isToolsModalOpen, setIsToolsModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const [isDoctorSummaryOpen, setIsDoctorSummaryOpen] = useState(false);
+  const [isAskHistoryOpen, setIsAskHistoryOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Load family profiles on mount
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
+
+  const fetchProfiles = async () => {
+    try {
+      const res = await fetch("/api/profiles");
+      if (res.ok) {
+        const data = await res.json();
+        setProfiles(data.profiles || []);
+        if (data.profiles && data.profiles.length > 0 && !activeProfile) {
+          setActiveProfile(data.profiles[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading profiles:", err);
+    }
+  };
+
   // Handle Left Sidebar tab switches
-  const handleTabChange = (tab: "home" | "history" | "saved" | "tools" | "about") => {
+  const handleTabChange = (tab: NavTabType) => {
+    if (tab === "history") {
+      setIsHistoryModalOpen(true);
+      return;
+    }
+    if (tab === "saved") {
+      setIsSavedModalOpen(true);
+      return;
+    }
+    if (tab === "tools") {
+      setIsToolsModalOpen(true);
+      return;
+    }
+    if (tab === "about") {
+      setIsAboutModalOpen(true);
+      return;
+    }
     setActiveTab(tab);
-    if (tab === "history") setIsHistoryModalOpen(true);
-    if (tab === "saved") setIsSavedModalOpen(true);
-    if (tab === "tools") setIsToolsModalOpen(true);
-    if (tab === "about") setIsAboutModalOpen(true);
   };
 
   // Start a fresh consultation session
@@ -114,7 +158,6 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // Send conversation payload to server-side API with language hint
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -125,6 +168,7 @@ export default function Home() {
           })),
           conversationId: activeConversationId || undefined,
           language: selectedLanguage,
+          profileId: activeProfile?.id,
         }),
       });
 
@@ -161,6 +205,12 @@ export default function Home() {
     }
   };
 
+  // Quick action from other views (Reports / Vitals / Timeline) to discuss in live chat
+  const handleCrossViewDiscuss = (promptText: string) => {
+    setActiveTab("home");
+    handleSendMessage(promptText);
+  };
+
   // Load a conversation from history
   const handleSelectConversation = async (id: string) => {
     try {
@@ -171,6 +221,7 @@ export default function Home() {
         if (data.messages && data.messages.length > 0) {
           setMessages(data.messages);
           setActiveConversationId(id);
+          setActiveTab("home");
         }
       }
     } catch (err) {
@@ -202,9 +253,9 @@ export default function Home() {
       )}
 
       {/* Main App Container */}
-      <div className="flex-1 max-w-[1600px] w-full mx-auto p-2 sm:p-4 lg:p-6 flex flex-col h-[calc(100vh-42px)]">
+      <div className="flex-1 max-w-[1680px] w-full mx-auto p-2 sm:p-4 lg:p-6 flex flex-col h-[calc(100vh-42px)]">
         <div className="flex-1 flex gap-4 overflow-hidden rounded-2xl bg-transparent">
-          {/* Left Sidebar */}
+          {/* Left Navigation Sidebar */}
           <LeftSidebar
             activeTab={activeTab}
             setActiveTab={handleTabChange}
@@ -214,36 +265,68 @@ export default function Home() {
             onCloseMobile={() => setIsMobileMenuOpen(false)}
           />
 
-          {/* Main Chat Center Canvas */}
+          {/* Dynamic Central Canvas View */}
           <main className="flex-1 flex flex-col min-w-0 h-full">
-            <MainChat
-              messages={messages}
-              isLoading={isLoading}
-              onSendMessage={handleSendMessage}
-              onClearChat={handleClearChat}
-              onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-              onToggleSaveMessage={handleToggleSave}
-              onOpenDoctorSummary={() => setIsDoctorSummaryOpen(true)}
-              selectedLanguage={selectedLanguage}
-              onChangeLanguage={(lang) => {
-                setSelectedLanguage(lang);
-              }}
-            />
+            {activeTab === "home" && (
+              <MainChat
+                messages={messages}
+                isLoading={isLoading}
+                onSendMessage={handleSendMessage}
+                onClearChat={handleClearChat}
+                onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+                onToggleSaveMessage={handleToggleSave}
+                onOpenDoctorSummary={() => setIsDoctorSummaryOpen(true)}
+                selectedLanguage={selectedLanguage}
+                onChangeLanguage={(lang) => setSelectedLanguage(lang)}
+                profiles={profiles}
+                activeProfile={activeProfile}
+                onSelectProfile={(p) => setActiveProfile(p)}
+                onRefreshProfiles={fetchProfiles}
+              />
+            )}
+
+            {activeTab === "dashboard" && (
+              <HealthDashboardView
+                activeProfile={activeProfile}
+                onAskAboutVitals={handleCrossViewDiscuss}
+              />
+            )}
+
+            {activeTab === "reports" && (
+              <MedicalReportView
+                activeProfile={activeProfile}
+                onDiscussInChat={handleCrossViewDiscuss}
+              />
+            )}
+
+            {activeTab === "medicines" && (
+              <MedicineIntelligenceView onAskInChat={handleCrossViewDiscuss} />
+            )}
+
+            {activeTab === "timeline" && (
+              <HealthTimelineView
+                activeProfile={activeProfile}
+                onAskTimelineInChat={handleCrossViewDiscuss}
+              />
+            )}
           </main>
 
-          {/* Right Sidebar */}
-          <RightSidebar
-            onSelectQuestion={handleSendMessage}
-            onOpenHospitalModal={() => setIsHospitalModalOpen(true)}
-            className="hidden xl:flex"
-          />
+          {/* Right Sidebar (only shown on Home chat view on large screens) */}
+          {activeTab === "home" && (
+            <RightSidebar
+              onSelectQuestion={handleSendMessage}
+              onOpenHospitalModal={() => setIsHospitalModalOpen(true)}
+              onOpenAskHistory={() => setIsAskHistoryOpen(true)}
+              className="hidden xl:flex"
+            />
+          )}
         </div>
       </div>
 
       {/* Bottom Global Footer */}
       <footer className="w-full text-center py-2.5 bg-transparent border-t border-gray-100/80">
         <p className="text-[11px] text-gray-400 font-normal">
-          © 2024 Vaidya Sahay AI • Built for MASQUERADE &apos;26 • All rights reserved
+          © 2024 Vaidya Sahay AI • Built for MASQUERADE &apos;26 • Next-Gen AI Healthcare Platform • All rights reserved
         </p>
       </footer>
 
@@ -255,20 +338,14 @@ export default function Home() {
 
       <ChatHistoryModal
         isOpen={isHistoryModalOpen}
-        onClose={() => {
-          setIsHistoryModalOpen(false);
-          setActiveTab("home");
-        }}
+        onClose={() => setIsHistoryModalOpen(false)}
         onSelectConversation={handleSelectConversation}
         onNewChat={handleNewChat}
       />
 
       <HealthToolsModal
         isOpen={isToolsModalOpen}
-        onClose={() => {
-          setIsToolsModalOpen(false);
-          setActiveTab("home");
-        }}
+        onClose={() => setIsToolsModalOpen(false)}
       />
 
       <DoctorSummaryModal
@@ -277,20 +354,21 @@ export default function Home() {
         messages={messages}
       />
 
+      <AskHistoryModal
+        isOpen={isAskHistoryOpen}
+        onClose={() => setIsAskHistoryOpen(false)}
+        activeProfile={activeProfile}
+        onInjectIntoChat={handleSendMessage}
+      />
+
       <AboutModal
         isOpen={isAboutModalOpen}
-        onClose={() => {
-          setIsAboutModalOpen(false);
-          setActiveTab("home");
-        }}
+        onClose={() => setIsAboutModalOpen(false)}
       />
 
       <SavedModal
         isOpen={isSavedModalOpen}
-        onClose={() => {
-          setIsSavedModalOpen(false);
-          setActiveTab("home");
-        }}
+        onClose={() => setIsSavedModalOpen(false)}
         savedMessages={savedMessages}
         onRemoveSaved={handleToggleSave}
       />

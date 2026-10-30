@@ -11,9 +11,10 @@ import {
   FileText,
   Languages,
 } from "lucide-react";
-import { ChatMessage, SupportedLanguage } from "@/lib/types";
+import { ChatMessage, SupportedLanguage, FamilyProfile } from "@/lib/types";
 import { MessageBubble } from "./MessageBubble";
 import { AIRobotAvatar } from "./Icons";
+import { FamilyProfileSelector } from "./FamilyProfileSelector";
 
 // Browser SpeechRecognition typing interface
 interface SpeechRecognitionErrorEvent extends Event {
@@ -64,6 +65,10 @@ interface MainChatProps {
   onOpenDoctorSummary?: () => void;
   selectedLanguage: SupportedLanguage;
   onChangeLanguage: (lang: SupportedLanguage) => void;
+  profiles?: FamilyProfile[];
+  activeProfile?: FamilyProfile | null;
+  onSelectProfile?: (profile: FamilyProfile) => void;
+  onRefreshProfiles?: () => void;
 }
 
 export const MainChat: React.FC<MainChatProps> = ({
@@ -76,6 +81,10 @@ export const MainChat: React.FC<MainChatProps> = ({
   onOpenDoctorSummary,
   selectedLanguage,
   onChangeLanguage,
+  profiles = [],
+  activeProfile = null,
+  onSelectProfile = () => {},
+  onRefreshProfiles = () => {},
 }) => {
   const [inputText, setInputText] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -192,7 +201,7 @@ export const MainChat: React.FC<MainChatProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-white lg:rounded-2xl border border-gray-100/90 shadow-xs overflow-hidden">
       {/* Top Header Bar */}
-      <header className="px-5 py-3.5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white z-10">
+      <header className="px-5 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white z-10">
         <div className="flex items-center gap-3">
           {onOpenMobileMenu && (
             <button
@@ -228,6 +237,16 @@ export const MainChat: React.FC<MainChatProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Family Profile Selector */}
+          {profiles.length > 0 && (
+            <FamilyProfileSelector
+              profiles={profiles}
+              activeProfile={activeProfile}
+              onSelectProfile={onSelectProfile}
+              onRefreshProfiles={onRefreshProfiles}
+            />
+          )}
+
           {/* Vernacular Language Selector */}
           <div className="flex items-center bg-gray-50 border border-gray-200/80 rounded-xl p-0.5 text-xs">
             <Languages className="w-3.5 h-3.5 text-gray-400 ml-1.5 mr-1" />
@@ -269,7 +288,7 @@ export const MainChat: React.FC<MainChatProps> = ({
             <span>Online</span>
           </div>
 
-          {/* Doctor Summary Button (Competitive Novel Feature) */}
+          {/* Doctor Summary Button */}
           {onOpenDoctorSummary && (
             <button
               onClick={onOpenDoctorSummary}

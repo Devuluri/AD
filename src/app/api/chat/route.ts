@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages, conversationId, language } = body;
+    const { messages, conversationId, language, profileId } = body;
 
     // Input validation
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
             data: {
               id: activeConvId,
               title: titleSnippet,
+              profileId: profileId || null,
             },
           });
         }
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
         const newConv = await prisma.conversation.create({
           data: {
             title: titleSnippet,
+            profileId: profileId || null,
             messages: {
               create: [
                 {
@@ -91,6 +93,21 @@ export async function POST(req: NextRequest) {
           },
         });
         activeConvId = newConv.id;
+      }
+
+      // Auto-index health complaint to timeline if it's a first turn or significant symptom
+      const symptomKeywords = ["fever", "pain", "cough", "headache", "vomiting", "dizziness", "chest", "rash"];
+      const hasSymptom = symptomKeywords.some((w) => latestMessage.content.toLowerCase().includes(w));
+      if (hasSymptom && latestMessage.role === "user") {
+        await prisma.timelineEvent.create({
+          data: {
+            profileId: profileId || null,
+            title: `Reported Symptom: ${latestMessage.content.substring(0, 45)}...`,
+            category: "symptom",
+            description: `Patient reported: "${latestMessage.content}". Vaidya Sahay AI initiated clinical triage assessment.`,
+            severity: latestMessage.content.toLowerCase().includes("chest") ? "severe" : "moderate",
+          },
+        });
       }
     } catch (dbError) {
       console.error("Database persistence warning:", dbError);
